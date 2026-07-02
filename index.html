@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Interactive data center memory management simulator comparing Next Fit and Worst Fit allocation algorithms with step-by-step animations." />
+  <title>Data Center Memory Simulator — Next Fit vs Worst Fit</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖥️</text></svg>" />
+</head>
+<body>
+  <canvas id="particle-canvas"></canvas>
+
+  <div id="app">
+    <!-- Header -->
+    <header class="app-header">
+      <h1>Data Center Memory Simulator</h1>
+      <p class="subtitle">Fixed &amp; Dynamic Memory Management — Next Fit vs Worst Fit</p>
+    </header>
+
+    <!-- Configuration Panel -->
+    <div class="glass-panel">
+      <div class="section-title"><span class="dot"></span>Configuration</div>
+      <div class="config-grid">
+        <div class="config-section">
+          <div class="section-title" style="margin-bottom:6px;">Memory Blocks (Server Racks)</div>
+          <div id="config-blocks"></div>
+          <div class="add-row">
+            <button id="btn-add-block" class="mini-btn">+ Add Block</button>
+          </div>
+        </div>
+        <div class="config-section">
+          <div class="section-title" style="margin-bottom:6px;">Processes (Data Payloads)</div>
+          <div id="config-processes"></div>
+          <div class="add-row">
+            <button id="btn-add-process" class="mini-btn">+ Add Process</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls Bar -->
+    <div class="glass-panel compact">
+      <div class="controls-bar">
+        <button id="btn-step" class="btn primary">⏭ Step</button>
+        <button id="btn-run-all" class="btn primary">▶ Run All</button>
+        <div class="separator"></div>
+        <button id="btn-reset" class="btn danger">↺ Reset</button>
+      </div>
+    </div>
+
+    <!-- Side-by-Side Comparison -->
+    <div class="comparison-grid">
+
+      <!-- Next Fit Panel -->
+      <div class="glass-panel algo-panel next-fit">
+        <div class="algo-title">
+          <span class="algo-badge">Next Fit</span>
+        </div>
+        <div class="algo-desc">
+          Starts searching from the <strong>last allocation point</strong>, wrapping around. Faster but can leave fragmented gaps at the beginning.
+        </div>
+
+        <div class="section-title"><span class="dot"></span>Process Queue</div>
+        <div id="queue-nextfit" class="process-queue"></div>
+
+        <div class="section-title" style="margin-top:14px;"><span class="dot"></span>Server Racks</div>
+        <div id="racks-nextfit" class="racks-container"></div>
+
+        <div class="section-title" style="margin-top:14px;"><span class="dot"></span>Statistics</div>
+        <div id="stats-nextfit" class="stats-grid"></div>
+
+        <div class="section-title" style="margin-top:14px;"><span class="dot"></span>Allocation Log</div>
+        <div id="log-nextfit" class="log-panel"></div>
+
+        <div id="banner-nextfit" style="margin-top:14px;"></div>
+      </div>
+
+      <!-- Worst Fit Panel -->
+      <div class="glass-panel algo-panel worst-fit">
+        <div class="algo-title">
+          <span class="algo-badge">Worst Fit</span>
+        </div>
+        <div class="algo-desc">
+          Always allocates to the <strong>largest available block</strong>. Minimizes small leftover fragments but may waste large blocks on small processes.
+        </div>
+
+        <div class="section-title"><span class="dot"></span>Process Queue</div>
+        <div id="queue-worstfit" class="process-queue"></div>
+
+        <div class="section-title" style="margin-top:14px;"><span class="dot"></span>Server Racks</div>
+        <div id="racks-worstfit" class="racks-container"></div>
+
+        <div class="section-title" style="margin-top:14px;"><span class="dot"></span>Statistics</div>
+        <div id="stats-worstfit" class="stats-grid"></div>
+
+        <div class="section-title" style="margin-top:14px;"><span class="dot"></span>Allocation Log</div>
+        <div id="log-worstfit" class="log-panel"></div>
+
+        <div id="banner-worstfit" style="margin-top:14px;"></div>
+      </div>
+
+    </div>
+
+    <!-- Comparison Results -->
+    <div class="glass-panel" style="margin-top: 0;">
+      <div class="section-title"><span class="dot"></span>Algorithm Comparison</div>
+      <table class="results-table">
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th>Next Fit</th>
+            <th>Worst Fit</th>
+          </tr>
+        </thead>
+        <tbody id="comparison-body">
+          <tr><td colspan="3" style="color: var(--text-dim); font-style: italic; text-align: center;">Run the simulation to see comparison results</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
