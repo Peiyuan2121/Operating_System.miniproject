@@ -41,10 +41,7 @@
     <!-- Controls Bar -->
     <div class="glass-panel compact">
       <div class="controls-bar">
-        <button id="btn-step" class="btn primary">⏭ Step</button>
-        <button id="btn-run-all" class="btn primary">▶ Run All</button>
-        <div class="separator"></div>
-        <button id="btn-reset" class="btn danger">↺ Reset</button>
+        <button id="btn-reset" class="btn danger">↺ Reset Simulation</button>
       </div>
     </div>
 
@@ -53,8 +50,14 @@
 
       <!-- Next Fit Panel -->
       <div class="glass-panel algo-panel next-fit">
-        <div class="algo-title">
-          <span class="algo-badge">Next Fit</span>
+        <div class="algo-title-row">
+          <div class="algo-title">
+            <span class="algo-badge">Next Fit</span>
+          </div>
+          <div class="algo-controls">
+            <button id="btn-nf-step" class="btn primary mini">⏭ Step</button>
+            <button id="btn-nf-run" class="btn primary mini">▶ Run</button>
+          </div>
         </div>
         <div class="algo-desc">
           Starts searching from the <strong>last allocation point</strong>, wrapping around. Faster but can leave fragmented gaps at the beginning.
@@ -77,8 +80,14 @@
 
       <!-- Worst Fit Panel -->
       <div class="glass-panel algo-panel worst-fit">
-        <div class="algo-title">
-          <span class="algo-badge">Worst Fit</span>
+        <div class="algo-title-row">
+          <div class="algo-title">
+            <span class="algo-badge">Worst Fit</span>
+          </div>
+          <div class="algo-controls">
+            <button id="btn-wf-step" class="btn primary mini">⏭ Step</button>
+            <button id="btn-wf-run" class="btn primary mini">▶ Run</button>
+          </div>
         </div>
         <div class="algo-desc">
           Always allocates to the <strong>largest available block</strong>. Minimizes small leftover fragments but may waste large blocks on small processes.

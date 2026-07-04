@@ -163,7 +163,7 @@ body {
   gap: 10px;
 }
 
-.controls-bar .btn {
+.btn {
   font-family: var(--font-sans);
   font-size: 0.8rem;
   font-weight: 600;
@@ -180,39 +180,39 @@ body {
   white-space: nowrap;
 }
 
-.controls-bar .btn:hover {
+.btn:hover {
   background: rgba(255, 107, 0, 0.08);
   border-color: var(--cyan);
   box-shadow: 0 0 12px var(--cyan-glow);
 }
 
-.controls-bar .btn:active {
+.btn:active {
   transform: scale(0.96);
 }
 
-.controls-bar .btn.primary {
+.btn.primary {
   background: linear-gradient(135deg, rgba(255, 107, 0, 0.15), rgba(255, 51, 102, 0.12));
   border-color: var(--cyan);
   color: var(--cyan);
 }
 
-.controls-bar .btn.primary:hover {
+.btn.primary:hover {
   background: linear-gradient(135deg, rgba(255, 107, 0, 0.25), rgba(255, 51, 102, 0.18));
   box-shadow: 0 0 20px var(--cyan-glow);
 }
 
-.controls-bar .btn.danger {
+.btn.danger {
   border-color: rgba(255, 51, 51, 0.3);
   color: var(--red);
 }
 
-.controls-bar .btn.danger:hover {
+.btn.danger:hover {
   background: rgba(255, 51, 51, 0.1);
   border-color: var(--red);
   box-shadow: 0 0 12px var(--red-glow);
 }
 
-.controls-bar .btn:disabled {
+.btn:disabled {
   opacity: 0.35;
   cursor: not-allowed;
   transform: none;
@@ -350,13 +350,33 @@ body {
   position: relative;
 }
 
-.algo-panel .algo-title {
+.algo-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.algo-title-row .algo-title {
   font-size: 0.9rem;
   font-weight: 700;
-  margin-bottom: 12px;
+  margin-bottom: 0;
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.algo-controls {
+  display: flex;
+  gap: 6px;
+}
+
+.btn.mini {
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  gap: 4px;
 }
 
 .algo-panel .algo-title .algo-badge {

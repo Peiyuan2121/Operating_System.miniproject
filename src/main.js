@@ -17,7 +17,8 @@ let mmNextFit = new MemoryManager(blocks);
 let mmWorstFit = new MemoryManager(blocks);
 const renderer = new Renderer();
 
-let isRunning = false;
+let isNextFitRunning = false;
+let isWorstFitRunning = false;
 let animSpeed = 600;
 
 // ── Initialization ──
@@ -28,15 +29,19 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function bindControls() {
-  document.getElementById('btn-step').addEventListener('click', stepBoth);
-  document.getElementById('btn-run-all').addEventListener('click', runAll);
+  document.getElementById('btn-nf-step').addEventListener('click', stepNextFit);
+  document.getElementById('btn-nf-run').addEventListener('click', runNextFit);
+  document.getElementById('btn-wf-step').addEventListener('click', stepWorstFit);
+  document.getElementById('btn-wf-run').addEventListener('click', runWorstFit);
   document.getElementById('btn-reset').addEventListener('click', resetSimulation);
   document.getElementById('btn-add-block').addEventListener('click', addBlock);
   document.getElementById('btn-add-process').addEventListener('click', addProcess);
-
 }
 
 function resetSimulation() {
+  isNextFitRunning = false;
+  isWorstFitRunning = false;
+
   blocks = scenario.blocks.map(b => b.clone());
 
   mmNextFit = new MemoryManager(blocks);
@@ -44,14 +49,13 @@ function resetSimulation() {
   mmNextFit.setProcesses(processes);
   mmWorstFit.setProcesses(processes);
 
-  isRunning = false;
   updateButtons();
   renderAll();
 
   renderer.clearLog('log-nextfit');
   renderer.clearLog('log-worstfit');
-  renderer.appendLog('log-nextfit', ['⏳ Ready — press Step or Run All to begin...'], 'info');
-  renderer.appendLog('log-worstfit', ['⏳ Ready — press Step or Run All to begin...'], 'info');
+  renderer.appendLog('log-nextfit', ['⏳ Ready — press Step or Run to begin...'], 'info');
+  renderer.appendLog('log-worstfit', ['⏳ Ready — press Step or Run to begin...'], 'info');
 
   // Remove completion banners
   const nfBanner = document.getElementById('banner-nextfit');
@@ -75,72 +79,124 @@ function renderAll() {
   renderer.renderStats('stats-worstfit', mmWorstFit.getStats());
 }
 
-async function stepBoth() {
-  if (isRunning) return;
-  if (mmNextFit.isComplete() && mmWorstFit.isComplete()) return;
-
-  isRunning = true;
+async function stepNextFit() {
+  if (isNextFitRunning) return;
+  isNextFitRunning = true;
   updateButtons();
 
-  // Save pre-step state for rendering during animation
+  await stepNextFitLogical();
+
+  isNextFitRunning = false;
+  updateButtons();
+}
+
+async function stepNextFitLogical() {
+  if (mmNextFit.isComplete()) return;
+
   const nfBlocksBefore = mmNextFit.blocks.map(b => b.clone());
-  const wfBlocksBefore = mmWorstFit.blocks.map(b => b.clone());
   const nfIdxBefore = mmNextFit.currentProcessIndex;
-  const wfIdxBefore = mmWorstFit.currentProcessIndex;
   const nfPointerBefore = mmNextFit.nextPointer;
 
-  // Execute one step on each
   const nfResult = mmNextFit.nextFitStep();
-  const wfResult = mmWorstFit.worstFitStep();
 
-  // Render pre-step state so blocks do not show the new process during scanning/locking
   renderer.renderBlocks('racks-nextfit', nfBlocksBefore, nfPointerBefore, 'nextfit');
-  renderer.renderBlocks('racks-worstfit', wfBlocksBefore, -1, 'worstfit');
   renderer.renderProcessQueue('queue-nextfit', processes, nfIdxBefore);
-  renderer.renderProcessQueue('queue-worstfit', processes, wfIdxBefore);
 
-  // Animate both in parallel (description box updates in real-time)
-  const animPromises = [];
   if (nfResult) {
-    animPromises.push(renderer.animateStep('racks-nextfit', nfResult, () => {
+    await renderer.animateStep('racks-nextfit', nfResult, () => {
       renderer.renderBlocks('racks-nextfit', mmNextFit.blocks, mmNextFit.nextPointer, 'nextfit');
-    }, 'log-nextfit'));
-  }
-  if (wfResult) {
-    animPromises.push(renderer.animateStep('racks-worstfit', wfResult, () => {
-      renderer.renderBlocks('racks-worstfit', mmWorstFit.blocks, -1, 'worstfit');
-    }, 'log-worstfit'));
+    }, 'log-nextfit');
   }
 
-  await Promise.all(animPromises);
+  renderNextFitStateOnly();
 
-  // Re-render to show the final allocated state
-  renderAll();
+  if (mmNextFit.isComplete()) {
+    showNfCompletion();
+  }
+}
 
-  if (mmNextFit.isComplete() && mmWorstFit.isComplete()) {
-    showCompletion();
+async function runNextFit() {
+  if (isNextFitRunning) return;
+  isNextFitRunning = true;
+  updateButtons();
+
+  while (!mmNextFit.isComplete() && isNextFitRunning) {
+    await stepNextFitLogical();
+    if (!mmNextFit.isComplete() && isNextFitRunning) {
+      await renderer.wait(200);
+    }
   }
 
-  isRunning = false;
+  isNextFitRunning = false;
   updateButtons();
 }
 
-async function runAll() {
-  if (isRunning) return;
+async function stepWorstFit() {
+  if (isWorstFitRunning) return;
+  isWorstFitRunning = true;
+  updateButtons();
 
-  while (!mmNextFit.isComplete() || !mmWorstFit.isComplete()) {
-    await stepBoth();
-    await renderer.wait(200);
+  await stepWorstFitLogical();
+
+  isWorstFitRunning = false;
+  updateButtons();
+}
+
+async function stepWorstFitLogical() {
+  if (mmWorstFit.isComplete()) return;
+
+  const wfBlocksBefore = mmWorstFit.blocks.map(b => b.clone());
+  const wfIdxBefore = mmWorstFit.currentProcessIndex;
+
+  const wfResult = mmWorstFit.worstFitStep();
+
+  renderer.renderBlocks('racks-worstfit', wfBlocksBefore, -1, 'worstfit');
+  renderer.renderProcessQueue('queue-worstfit', processes, wfIdxBefore);
+
+  if (wfResult) {
+    await renderer.animateStep('racks-worstfit', wfResult, () => {
+      renderer.renderBlocks('racks-worstfit', mmWorstFit.blocks, -1, 'worstfit');
+    }, 'log-worstfit');
+  }
+
+  renderWorstFitStateOnly();
+
+  if (mmWorstFit.isComplete()) {
+    showWfCompletion();
   }
 }
 
-function showCompletion() {
-  const nfStats = mmNextFit.getStats();
-  const wfStats = mmWorstFit.getStats();
+async function runWorstFit() {
+  if (isWorstFitRunning) return;
+  isWorstFitRunning = true;
+  updateButtons();
 
-  // Banners
+  while (!mmWorstFit.isComplete() && isWorstFitRunning) {
+    await stepWorstFitLogical();
+    if (!mmWorstFit.isComplete() && isWorstFitRunning) {
+      await renderer.wait(200);
+    }
+  }
+
+  isWorstFitRunning = false;
+  updateButtons();
+}
+
+function renderNextFitStateOnly() {
+  renderer.renderBlocks('racks-nextfit', mmNextFit.blocks, mmNextFit.nextPointer, 'nextfit');
+  renderer.renderProcessQueue('queue-nextfit', processes, mmNextFit.currentProcessIndex);
+  renderer.renderStats('stats-nextfit', mmNextFit.getStats());
+}
+
+function renderWorstFitStateOnly() {
+  renderer.renderBlocks('racks-worstfit', mmWorstFit.blocks, -1, 'worstfit');
+  renderer.renderProcessQueue('queue-worstfit', processes, mmWorstFit.currentProcessIndex);
+  renderer.renderStats('stats-worstfit', mmWorstFit.getStats());
+}
+
+function showNfCompletion() {
+  const nfStats = mmNextFit.getStats();
   const nfBanner = document.getElementById('banner-nextfit');
-  const wfBanner = document.getElementById('banner-worstfit');
 
   if (nfBanner) {
     nfBanner.innerHTML = `
@@ -149,6 +205,14 @@ function showCompletion() {
         <p>${nfStats.success} allocated / ${nfStats.fail} failed — ${nfStats.rate}% success — ${nfStats.utilization}% memory used</p>
       </div>`;
   }
+
+  checkAndShowComparison();
+}
+
+function showWfCompletion() {
+  const wfStats = mmWorstFit.getStats();
+  const wfBanner = document.getElementById('banner-worstfit');
+
   if (wfBanner) {
     wfBanner.innerHTML = `
       <div class="completion-banner">
@@ -157,8 +221,13 @@ function showCompletion() {
       </div>`;
   }
 
-  // Comparison table
-  buildComparisonTable(nfStats, wfStats);
+  checkAndShowComparison();
+}
+
+function checkAndShowComparison() {
+  if (mmNextFit.isComplete() && mmWorstFit.isComplete()) {
+    buildComparisonTable(mmNextFit.getStats(), mmWorstFit.getStats());
+  }
 }
 
 function buildComparisonTable(nf, wf) {
@@ -208,12 +277,15 @@ function buildComparisonTable(nf, wf) {
 }
 
 function updateButtons() {
-  const stepBtn = document.getElementById('btn-step');
-  const runBtn = document.getElementById('btn-run-all');
-  const allDone = mmNextFit.isComplete() && mmWorstFit.isComplete();
+  const stepNfBtn = document.getElementById('btn-nf-step');
+  const runNfBtn = document.getElementById('btn-nf-run');
+  const stepWfBtn = document.getElementById('btn-wf-step');
+  const runWfBtn = document.getElementById('btn-wf-run');
 
-  stepBtn.disabled = isRunning || allDone;
-  runBtn.disabled = isRunning || allDone;
+  if (stepNfBtn) stepNfBtn.disabled = isNextFitRunning || mmNextFit.isComplete();
+  if (runNfBtn) runNfBtn.disabled = isNextFitRunning || mmNextFit.isComplete();
+  if (stepWfBtn) stepWfBtn.disabled = isWorstFitRunning || mmWorstFit.isComplete();
+  if (runWfBtn) runWfBtn.disabled = isWorstFitRunning || mmWorstFit.isComplete();
 }
 
 // ── Configuration UI ──
